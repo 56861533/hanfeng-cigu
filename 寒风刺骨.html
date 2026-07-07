@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>寒风刺骨</title>
+<style>
+  :root {
+    --bg: #f5f5f7;
+    --card-bg: #ffffff;
+    --text: #1d1d1f;
+    --text-secondary: #6e6e73;
+    --text-tertiary: #86868b;
+    --accent: #0071e3;
+    --accent-light: #e8f0fe;
+    --border: #d2d2d7;
+    --divider: #e8e8ed;
+    --tag-bg: #f5f5f7;
+    --correct: #34c759;
+    --correct-bg: #eafcef;
+    --wrong: #ff3b30;
+    --wrong-bg: #fde8e8;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.06);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.08);
+    --radius-sm: 10px;
+    --radius-md: 16px;
+    --radius-lg: 20px;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", "PingFang SC", "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  /* ── Nav ── */
+  .nav {
+    position: sticky; top:0; z-index:100;
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    background: rgba(245,245,247,0.72);
+    border-bottom: 1px solid var(--divider);
+  }
+  .nav-inner {
+    max-width: 800px; margin: 0 auto;
+    padding: 14px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-title { font-size: 18px; font-weight: 600; letter-spacing: -0.02em; }
+  .nav-score {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 14px; font-weight: 500; color: var(--text-secondary);
+  }
+  .nav-score .c { color: var(--correct); font-weight: 700; }
+  .nav-score .w { color: var(--wrong); font-weight: 700; }
+  .nav-score .t { color: var(--text-tertiary); }
+
+  /* ── Hero ── */
+  .hero {
+    max-width: 800px; margin: 0 auto;
+    padding: 48px 24px 32px; text-align: center;
+  }
+  .hero-icon {
+    width: 56px; height: 56px; margin: 0 auto 16px;
+    background: linear-gradient(135deg, #1d1d1f, #3a3a3c);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; box-shadow: var(--shadow-md);
+  }
+  .hero h1 {
+    font-size: 38px; font-weight: 700;
+    letter-spacing: -0.03em; line-height: 1.15; margin-bottom: 8px;
+  }
+  .hero-sub { font-size: 17px; color: var(--text-secondary); }
+
+  /* ── Progress ── */
+  .progress-wrap { max-width: 800px; margin: 0 auto 24px; padding: 0 24px; }
+  .progress-bar-outer {
+    height: 4px; background: var(--divider); border-radius: 2px; overflow: hidden;
+  }
+  .progress-bar-inner {
+    height: 100%; border-radius: 2px;
+    background: var(--accent);
+    transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  /* ── Main ── */
+  .main { max-width: 800px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ── Section ── */
+  .section { margin-bottom: 40px; }
+  .section-header {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+  }
+  .section-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .section-icon.reading { background: #e8f0fe; }
+  .section-icon.cloze { background: #fef3e8; }
+  .section-label {
+    font-size: 13px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--text-tertiary);
+  }
+  .section-title { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+
+  /* ── Cloze Passage ── */
+  .cloze-passage {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--divider);
+    font-size: 15px; line-height: 2.2;
+  }
+  .cloze-passage p { margin-bottom: 10px; }
+  .cloze-passage p:last-child { margin-bottom: 0; }
+
+  .cloze-blank {
+    display: inline-block;
+    min-width: 32px; height: 28px;
+    border-radius: 7px;
+    background: var(--accent-light);
+    color: var(--accent);
+    text-align: center;
+    font-weight: 700; font-size: 13px;
+    line-height: 28px;
+    vertical-align: middle;
+    margin: 0 3px; padding: 0 6px;
+    transition: all 0.3s ease;
+  }
+  .cloze-blank.active-blank {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 0 0 4px rgba(0,113,227,0.25);
+    animation: pulse-blank 2s ease-in-out infinite;
+  }
+  @keyframes pulse-blank {
+    0%,100% { box-shadow: 0 0 0 4px rgba(0,113,227,0.25); }
+    50%     { box-shadow: 0 0 0 8px rgba(0,113,227,0.08); }
+  }
+  .cloze-blank.done-right {
+    background: var(--correct-bg);
+    color: var(--correct);
+    box-shadow: none;
+    animation: none;
+  }
+  .cloze-blank.done-wrong {
+    background: var(--wrong-bg);
+    color: var(--wrong);
+    box-shadow: none;
+    animation: none;
+  }
+
+  /* ── Question Card ── */
+  .question-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 28px 32px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid transparent;
+    transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+  .question-card:hover { box-shadow: var(--shadow-md); border-color: var(--border); }
+  .question-card.done-correct { border-color: var(--correct); background: var(--correct-bg); }
+  .question-card.done-wrong { border-color: var(--wrong); background: var(--wrong-bg); }
+
+  .q-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 16px; }
+  .q-number {
+    width: 28px; height: 28px; border-radius: 7px;
+    background: var(--tag-bg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 600; color: var(--text-secondary); flex-shrink: 0;
+  }
+  .q-text { font-size: 16px; font-weight: 500; letter-spacing: -0.01em; padding-top: 2px; flex: 1; }
+
+  /* ── Options ── */
+  .options { display: flex; flex-direction: column; gap: 6px; padding-left: 42px; }
+  .option {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 14px; color: var(--text);
+    cursor: pointer; user-select: none;
+    transition: all 0.15s ease;
+    border: 1.5px solid transparent;
+    background: var(--tag-bg);
+  }
+  .option:hover { background: #eeeef1; }
+  .option:active { transform: scale(0.985); }
+
+  .option.chosen-correct {
+    background: var(--correct-bg) !important;
+    border-color: var(--correct) !important;
+    color: var(--correct); font-weight: 500;
+  }
+  .option.chosen-wrong {
+    background: var(--wrong-bg) !important;
+    border-color: var(--wrong) !important;
+    color: var(--wrong); font-weight: 500;
+  }
+  .option.reveal-correct {
+    background: var(--correct-bg) !important;
+    border-color: var(--correct) !important;
+    color: var(--correct);
+  }
+  .option.dimmed { opacity: 0.4; pointer-events: none; }
+
+  .option-badge {
+    width: 24px; height: 24px; border-radius: 6px;
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: var(--text-tertiary); flex-shrink: 0;
+    transition: all 0.15s ease;
+    border: 1px solid var(--divider);
+  }
+  .option.chosen-correct .option-badge { background: var(--correct); color: #fff; border-color: var(--correct); }
+  .option.chosen-wrong .option-badge { background: var(--wrong); color: #fff; border-color: var(--wrong); }
+  .option.reveal-correct .option-badge { background: var(--correct); color: #fff; border-color: var(--correct); }
+
+  /* ── Feedback ── */
+  .card-feedback {
+    margin-top: 12px; padding-left: 42px;
+    font-size: 13px; font-weight: 500;
+    display: none;
+  }
+  .card-feedback.show { display: block; }
+  .card-feedback.correct-fb { color: var(--correct); }
+  .card-feedback.wrong-fb { color: var(--wrong); }
+
+  /* ── Cloze Navigator ── */
+  .cloze-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .cloze-nav-counter {
+    font-size: 14px; font-weight: 600; color: var(--text-secondary);
+    letter-spacing: -0.01em;
+  }
+  .cloze-nav-btns { display: flex; gap: 6px; }
+  .cloze-nav-btn {
+    width: 32px; height: 32px; border-radius: 8px;
+    border: 1px solid var(--divider);
+    background: var(--card-bg);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: var(--text-secondary);
+    transition: all 0.15s ease;
+  }
+  .cloze-nav-btn:hover { background: #f0f0f2; border-color: var(--border); }
+  .cloze-nav-btn:active { transform: scale(0.93); }
+  .cloze-nav-btn:disabled { opacity: 0.3; cursor: default; pointer-events: none; }
+
+  .cloze-card-wrapper {
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  .cloze-card-wrapper.switching {
+    opacity: 0; transform: translateY(8px);
+  }
+
+  /* ── Dot indicators ── */
+  .cloze-dots {
+    display: flex; gap: 6px; justify-content: center;
+    margin-bottom: 16px;
+  }
+  .cloze-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--divider);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .cloze-dot.current { background: var(--accent); width: 24px; border-radius: 4px; }
+  .cloze-dot.done-right { background: var(--correct); }
+  .cloze-dot.done-wrong { background: var(--wrong); }
+
+  /* ── Buttons ── */
+  .btn-row { text-align: center; margin-top: 20px; }
+  .btn-reset {
+    padding: 10px 28px;
+    border-radius: 20px; border: none;
+    font-size: 15px; font-weight: 600; cursor: pointer;
+    background: var(--accent); color: #fff;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+    box-shadow: var(--shadow-sm);
+  }
+  .btn-reset:hover { background: #0077ed; box-shadow: var(--shadow-md); transform: translateY(-1px); }
+  .btn-reset:active { transform: scale(0.97); }
+
+  /* ── Footer ── */
+  .footer {
+    text-align: center; padding: 40px 24px;
+    color: var(--text-tertiary); font-size: 13px;
+    border-top: 1px solid var(--divider); margin-top: 20px;
+  }
+
+  @media (max-width: 600px) {
+    .hero h1 { font-size: 30px; }
+    .hero { padding: 36px 20px 24px; }
+    .main { padding: 0 16px 60px; }
+    .cloze-passage, .question-card { padding: 20px; }
+    .options { padding-left: 0; }
+    .card-feedback { padding-left: 0; }
+    .nav-score { font-size: 12px; gap: 6px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="nav">
+  <div class="nav-inner">
+    <span class="nav-title">❄️ 寒风刺骨</span>
+    <div class="nav-score">
+      <span>✅ <span class="c" id="correctCount">0</span></span>
+      <span>❌ <span class="w" id="wrongCount">0</span></span>
+      <span class="t">/ <span id="totalCount">15</span></span>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<header class="hero">
+  <div class="hero-icon">❄️</div>
+  <h1>寒风刺骨</h1>
+  <p class="hero-sub">阅读理解 &amp; 完形填空 · 互动答题</p>
+</header>
+
+<!-- Progress -->
+<div class="progress-wrap">
+  <div class="progress-bar-outer">
+    <div class="progress-bar-inner" id="progressBar" style="width:0%"></div>
+  </div>
+</div>
+
+<!-- Main -->
+<main class="main">
+
+  <!-- ============ READING ============ -->
+  <section class="section" id="readingSection">
+    <div class="section-header">
+      <div class="section-icon reading">📖</div>
+      <div>
+        <div class="section-label">Part 1</div>
+        <div class="section-title">阅读理解</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CLOZE ============ -->
+  <section class="section" id="clozeSection">
+    <div class="section-header">
+      <div class="section-icon cloze">✍️</div>
+      <div>
+        <div class="section-label">Part 2</div>
+        <div class="section-title">完形填空</div>
+      </div>
+    </div>
+
+    <!-- Passage -->
+    <div class="cloze-passage" id="clozePassage"></div>
+
+    <!-- Dots -->
+    <div class="cloze-dots" id="clozeDots"></div>
+
+    <!-- Navigator -->
+    <div class="cloze-nav">
+      <span class="cloze-nav-counter" id="clozeCounter">第 1 / 10 题</span>
+      <div class="cloze-nav-btns">
+        <button class="cloze-nav-btn" id="clozePrev" onclick="goCloze(-1)" disabled>◀</button>
+        <button class="cloze-nav-btn" id="clozeNext" onclick="goCloze(1)">▶</button>
+      </div>
+    </div>
+
+    <!-- Single question card -->
+    <div class="cloze-card-wrapper" id="clozeCardWrapper"></div>
+  </section>
+
+  <!-- Buttons -->
+  <div class="btn-row">
+    <button class="btn-reset" onclick="resetAll()">🔄 重新作答</button>
+  </div>
+
+</main>
+
+<footer class="footer">
+  Designed with Apple's design philosophy<br>Simplicity &middot; Clarity &middot; Elegance
+</footer>
+
+<script>
+// ==================== DATA ====================
+const readingData = [
+  { q: "What is the condition of China's auto export volume in recent years?",
+    opts: ["NEV exports were the same as traditional fuel vehicles in 2021",
+           "Fuel vehicle exports seldom account for a major share",
+           "Fuel vehicles made in China are becoming more popular",
+           "NEV exports account for a much larger part than before"], ans: 3 },
+  { q: "Where is the new export destination for the new energy vehicles made in China?",
+    opts: ["Europe", "North America", "South Asia", "Africa"], ans: 0 },
+  { q: "Which of the following is NOT the reason that Chinese vehicles are popular in overseas markets?",
+    opts: ["China's auto companies keep improving their products in all aspects",
+           "Foreign consumers are unwilling to accept the increasing fuel price",
+           "China can assemble a car at a relatively low cost due to the complete supply chain",
+           "Overseas markets are gradually recovering and the overall environment is getting better"], ans: 1 },
+  { q: "Which of the following statements is NOT true?",
+    opts: ["China is leading the world in the field of NEVs production and sales",
+           "Great Wall Motor signed a cooperation agreement with a large German car rental company",
+           "Chinese-made EVs play an increasingly important role in China's foreign trade growth",
+           "China's vehicles are winning many foreign consumers across the world"], ans: 1 },
+  { q: "What is the attitude the author holds toward the domestic automakers?",
+    opts: ["Supportive", "Concerned", "Unfavorable", "Impartial"], ans: 0 }
+];
+
+const clozeData = [
+  { q: "boss ___ at him",                          opts: ["A. whispering", "B. yelling", "C. murmuring", "D. muttering"], ans: 1 },
+  { q: "was like a(n) ___",                         opts: ["A. trigger", "B. barrier", "C. shelter", "D. comfort"], ans: 0 },
+  { q: "as he ___ the confident stance",            opts: ["A. ignored", "B. mirrored", "C. rejected", "D. criticized"], ans: 1 },
+  { q: "a wave of ___",                             opts: ["A. confidence", "B. certainty", "C. uncertainty", "D. stability"], ans: 2 },
+  { q: "shaped by ___ of discipline",               opts: ["A. days", "B. months", "C. years", "D. hours"], ans: 2 },
+  { q: "the value of ___ and integrity",            opts: ["A. laziness", "B. impatience", "C. perseverance", "D. weakness"], ans: 2 },
+  { q: "carried with him into his ___",             opts: ["A. hobby", "B. vacation", "C. pastime", "D. career"], ans: 3 },
+  { q: "professional growth also ___ resilience",   opts: ["A. required", "B. rejected", "C. ignored", "D. avoided"], ans: 0 },
+  { q: "took a deep ___",                           opts: ["A. sigh", "B. breath", "C. yawn", "D. grasp"], ans: 1 },
+  { q: "instead of ___",                            opts: ["A. cooperation", "B. agreement", "C. compromise", "D. resistance"], ans: 3 }
+];
+
+const clozePassageHTML = `
+  <p>As soon as Mark walked into the office, he noticed that there was a sense of tension in the air.</p>
+  <p>When he heard his boss <span class="cloze-blank" id="cb0">1</span> at him, a profound feeling stirred within him. The sound of the harsh rebuke (斥责) was like a(n) <span class="cloze-blank" id="cb1">2</span>, striking against the memories of his upbringing.</p>
+  <p>He stood there, trying to keep calm, but as he <span class="cloze-blank" id="cb2">3</span> the confident stance of his colleagues, he felt a wave of <span class="cloze-blank" id="cb3">4</span>.</p>
+  <p>Mark had always taken pride in his vocational qualities, shaped by <span class="cloze-blank" id="cb4">5</span> of discipline and hard work. His parents had taught him the value of <span class="cloze-blank" id="cb5">6</span> and integrity, which he had carried with him into his <span class="cloze-blank" id="cb6">7</span>.</p>
+  <p>Yet, in moments like this, he was reminded that professional growth also <span class="cloze-blank" id="cb7">8</span> resilience in the face of criticism.</p>
+  <p>He took a deep <span class="cloze-blank" id="cb8">9</span>, focusing on how he mirrored the calm demeanor (举止) of those he admired.</p>
+  <p>This was not just a test of his skills but of his character. Mark knew that how he responded now would define him more than any success or failure. He spoke to his boss with a calm voice, displaying respectful confidence instead of <span class="cloze-blank" id="cb9">10</span>.</p>
+  <p>At that moment, Mark realized that true vocational qualities went beyond technical expertise.</p>
+`;
+
+const TOTAL = readingData.length + clozeData.length;
+let correctCount = 0;
+let wrongCount = 0;
+let readingDone = new Array(readingData.length).fill(false);
+let clozeDone = new Array(clozeData.length).fill(false);
+let clozeIdx = 0; // current visible cloze question
+
+const LABELS = 'ABCD';
+
+// ==================== BUILD READING ====================
+const readingSection = document.getElementById('readingSection');
+readingData.forEach((item, i) => {
+  const card = document.createElement('div');
+  card.className = 'question-card';
+  card.id = 'rCard' + i;
+  card.innerHTML = `
+    <div class="q-header"><div class="q-number">${i + 1}</div><div class="q-text">${item.q}</div></div>
+    <div class="options">
+      ${item.opts.map((opt, j) => `
+        <div class="option" onclick="answerReading(${i}, ${j}, this)">
+          <span class="option-badge">${LABELS[j]}</span><span>${opt}</span>
+        </div>`).join('')}
+    </div>
+    <div class="card-feedback" id="rFb${i}"></div>`;
+  readingSection.appendChild(card);
+});
+
+// ==================== BUILD CLOZE PASSAGE ====================
+document.getElementById('clozePassage').innerHTML = clozePassageHTML;
+
+// ==================== BUILD CLOZE DOTS ====================
+const dotsContainer = document.getElementById('clozeDots');
+clozeData.forEach((_, i) => {
+  const dot = document.createElement('span');
+  dot.className = 'cloze-dot';
+  dot.id = 'clozeDot' + i;
+  dot.title = `第 ${i + 1} 题`;
+  dot.onclick = () => goClozeTo(i);
+  dotsContainer.appendChild(dot);
+});
+
+// ==================== RENDER CLOZE CARD ====================
+function renderClozeCard(idx, animate) {
+  const wrapper = document.getElementById('clozeCardWrapper');
+  if (animate) {
+    wrapper.classList.add('switching');
+    setTimeout(() => {
+      fillClozeCardHTML(idx);
+      wrapper.classList.remove('switching');
+    }, 180);
+  } else {
+    fillClozeCardHTML(idx);
+    wrapper.classList.remove('switching');
+  }
+
+  // Update dots
+  document.querySelectorAll('.cloze-dot').forEach((d, i) => {
+    d.classList.remove('current');
+    if (i === idx) d.classList.add('current');
+  });
+
+  // Highlight active blank
+  document.querySelectorAll('.cloze-blank').forEach((b, i) => {
+    b.classList.remove('active-blank');
+    if (i === idx && !clozeDone[i]) b.classList.add('active-blank');
+  });
+
+  // Update counter & buttons
+  document.getElementById('clozeCounter').textContent = `第 ${idx + 1} / ${clozeData.length} 题`;
+  document.getElementById('clozePrev').disabled = (idx === 0);
+  document.getElementById('clozeNext').disabled = (idx === clozeData.length - 1);
+}
+
+function fillClozeCardHTML(idx) {
+  const wrapper = document.getElementById('clozeCardWrapper');
+  const item = clozeData[idx];
+  const done = clozeDone[idx];
+
+  if (done) {
+    const correct = item.ans;
+    const wasRight = document.getElementById('cb' + idx).classList.contains('done-right');
+    wrapper.innerHTML = `
+      <div class="question-card ${wasRight ? 'done-correct' : 'done-wrong'}">
+        <div class="q-header"><div class="q-number">${idx + 1}</div><div class="q-text">${item.q}</div></div>
+        <div class="options">
+          ${item.opts.map((opt, j) => `
+            <div class="option dimmed ${j === correct ? 'reveal-correct' : ''}">
+              <span class="option-badge">${LABELS[j]}</span><span>${opt.replace(/^[A-D]\.\s*/, '')}</span>
+            </div>`).join('')}
+        </div>
+        <div class="card-feedback show ${wasRight ? 'correct-fb' : 'wrong-fb'}" id="cFb${idx}">
+          ${wasRight ? '✅ 回答正确！' : `❌ 正确答案是 ${LABELS[correct]}. ${item.opts[correct].replace(/^[A-D]\.\s*/, '')}`}
+        </div>
+      </div>`;
+  } else {
+    wrapper.innerHTML = `
+      <div class="question-card" id="cCard${idx}">
+        <div class="q-header"><div class="q-number">${idx + 1}</div><div class="q-text">${item.q}</div></div>
+        <div class="options">
+          ${item.opts.map((opt, j) => `
+            <div class="option" onclick="answerCloze(${idx}, ${j}, this)">
+              <span class="option-badge">${LABELS[j]}</span><span>${opt.replace(/^[A-D]\.\s*/, '')}</span>
+            </div>`).join('')}
+        </div>
+        <div class="card-feedback" id="cFb${idx}"></div>
+      </div>`;
+  }
+}
+
+function goCloze(delta) {
+  const next = clozeIdx + delta;
+  if (next < 0 || next >= clozeData.length) return;
+  clozeIdx = next;
+  renderClozeCard(clozeIdx, true);
+}
+
+function goClozeTo(idx) {
+  if (idx === clozeIdx) return;
+  clozeIdx = idx;
+  renderClozeCard(clozeIdx, true);
+}
+
+// ==================== ANSWER READING ====================
+function answerReading(qIdx, oIdx, el) {
+  if (readingDone[qIdx]) return;
+  readingDone[qIdx] = true;
+  const card = document.getElementById('rCard' + qIdx);
+  const item = readingData[qIdx];
+  const correct = item.ans;
+  const allOpts = card.querySelectorAll('.option');
+  allOpts.forEach(o => o.classList.add('dimmed'));
+
+  if (oIdx === correct) {
+    el.classList.add('chosen-correct');
+    el.classList.remove('dimmed');
+    correctCount++;
+    card.classList.add('done-correct');
+    document.getElementById('rFb' + qIdx).textContent = '✅ 回答正确！';
+    document.getElementById('rFb' + qIdx).className = 'card-feedback show correct-fb';
+  } else {
+    el.classList.add('chosen-wrong');
+    el.classList.remove('dimmed');
+    allOpts[correct].classList.add('reveal-correct');
+    allOpts[correct].classList.remove('dimmed');
+    wrongCount++;
+    card.classList.add('done-wrong');
+    document.getElementById('rFb' + qIdx).textContent = `❌ 正确答案是 ${LABELS[correct]}. ${item.opts[correct]}`;
+    document.getElementById('rFb' + qIdx).className = 'card-feedback show wrong-fb';
+  }
+  updateScore();
+}
+
+// ==================== ANSWER CLOZE ====================
+function answerCloze(idx, oIdx, el) {
+  if (clozeDone[idx]) return;
+  clozeDone[idx] = true;
+
+  const item = clozeData[idx];
+  const correct = item.ans;
+  const card = document.getElementById('cCard' + idx);
+  const allOpts = card.querySelectorAll('.option');
+  allOpts.forEach(o => o.classList.add('dimmed'));
+
+  const blank = document.getElementById('cb' + idx);
+  const optText = item.opts[oIdx].replace(/^[A-D]\.\s*/, '');
+
+  if (oIdx === correct) {
+    el.classList.add('chosen-correct');
+    el.classList.remove('dimmed');
+    correctCount++;
+    card.classList.add('done-correct');
+    blank.textContent = optText;
+    blank.classList.add('done-right');
+    blank.classList.remove('active-blank');
+
+    // Update dot
+    const dot = document.getElementById('clozeDot' + idx);
+    dot.classList.add('done-right');
+  } else {
+    el.classList.add('chosen-wrong');
+    el.classList.remove('dimmed');
+    allOpts[correct].classList.add('reveal-correct');
+    allOpts[correct].classList.remove('dimmed');
+    wrongCount++;
+    card.classList.add('done-wrong');
+    blank.textContent = optText;
+    blank.classList.add('done-wrong');
+    blank.classList.remove('active-blank');
+
+    const dot = document.getElementById('clozeDot' + idx);
+    dot.classList.add('done-wrong');
+  }
+
+  updateScore();
+
+  // Auto-advance to next unanswered after short delay
+  if (idx < clozeData.length - 1) {
+    setTimeout(() => {
+      // Find next unanswered
+      let next = idx + 1;
+      while (next < clozeData.length && clozeDone[next]) next++;
+      if (next >= clozeData.length) next = clozeData.length - 1;
+      clozeIdx = next;
+      renderClozeCard(clozeIdx, true);
+    }, 600);
+  }
+}
+
+// ==================== SCORE ====================
+function updateScore() {
+  document.getElementById('correctCount').textContent = correctCount;
+  document.getElementById('wrongCount').textContent = wrongCount;
+  const done = correctCount + wrongCount;
+  document.getElementById('progressBar').style.width = `${(done / TOTAL) * 100}%`;
+}
+
+// ==================== RESET ====================
+function resetAll() {
+  correctCount = 0; wrongCount = 0; clozeIdx = 0;
+  readingDone = new Array(readingData.length).fill(false);
+  clozeDone = new Array(clozeData.length).fill(false);
+
+  // Reset reading cards
+  readingData.forEach((_, i) => {
+    const card = document.getElementById('rCard' + i);
+    card.classList.remove('done-correct', 'done-wrong');
+    card.querySelectorAll('.option').forEach(o => {
+      o.classList.remove('chosen-correct', 'chosen-wrong', 'reveal-correct', 'dimmed');
+    });
+    const fb = document.getElementById('rFb' + i);
+    fb.className = 'card-feedback'; fb.textContent = '';
+  });
+
+  // Reset cloze blanks
+  for (let i = 0; i < clozeData.length; i++) {
+    const blank = document.getElementById('cb' + i);
+    blank.textContent = i + 1;
+    blank.classList.remove('done-right', 'done-wrong', 'active-blank');
+  }
+
+  // Reset dots
+  document.querySelectorAll('.cloze-dot').forEach(d => {
+    d.classList.remove('current', 'done-right', 'done-wrong');
+  });
+
+  updateScore();
+  document.getElementById('progressBar').style.width = '0%';
+  renderClozeCard(0, false);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ==================== INIT ====================
+updateScore();
+renderClozeCard(0, false);
+</script>
+
+</body>
+</html>
